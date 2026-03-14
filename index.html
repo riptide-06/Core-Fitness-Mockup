@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CORE — Physical Therapy for Athletes</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #080808;
+    --blue: #00A3FF;
+    --lime: #C8FF00;
+    --orange: #FF6B1A;
+    --white: #F0EDE8;
+    --gray: #1a1a1a;
+    --muted: #555;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    width: 10px; height: 10px;
+    background: var(--lime);
+    border-radius: 50%;
+    position: fixed; pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, background 0.3s;
+    mix-blend-mode: difference;
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(200,255,0,0.4);
+    border-radius: 50%;
+    position: fixed; pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.18s ease, width 0.3s, height 0.3s;
+  }
+
+  /* CANVAS */
+  #bubble-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 60px;
+    background: linear-gradient(to bottom, rgba(8,8,8,0.9) 0%, transparent 100%);
+    backdrop-filter: blur(2px);
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.15em;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .logo span { color: var(--blue); }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a {
+    color: rgba(240,237,232,0.6);
+    text-decoration: none;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--lime); }
+  .nav-cta {
+    background: transparent;
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+  }
+  .nav-cta:hover { background: var(--blue); color: var(--black); }
+
+  /* SECTIONS */
+  section { position: relative; z-index: 10; }
+
+  /* HERO */
+  #hero {
+    min-height: 100vh;
+    display: flex; align-items: center;
+    padding: 0 60px;
+    padding-top: 100px;
+  }
+  .hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+  .hero-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--lime);
+    border: 1px solid rgba(200,255,0,0.3);
+    padding: 6px 14px;
+    margin-bottom: 28px;
+  }
+  .hero-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 9vw, 9rem);
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+  }
+  .hero-headline .line-blue { color: var(--blue); }
+  .hero-headline .line-orange { color: var(--orange); }
+  .hero-headline .line-outline {
+    -webkit-text-stroke: 1px rgba(240,237,232,0.3);
+    color: transparent;
+  }
+  .hero-sub {
+    margin-top: 32px;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: rgba(240,237,232,0.55);
+    max-width: 400px;
+    font-weight: 300;
+  }
+  .hero-actions {
+    margin-top: 48px;
+    display: flex; gap: 16px; align-items: center;
+  }
+  .btn-primary {
+    background: var(--lime);
+    color: var(--black);
+    border: none;
+    padding: 16px 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  }
+  .btn-primary:hover { background: var(--orange); transform: translateY(-2px); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--white);
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: none;
+    display: flex; align-items: center; gap: 10px;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+  }
+  .btn-ghost:hover { opacity: 1; }
+  .btn-ghost .arrow { font-size: 1.2rem; }
+
+  /* HERO STATS */
+  .hero-stats {
+    display: flex; flex-direction: column; gap: 32px;
+    padding-left: 40px;
+    border-left: 1px solid rgba(255,255,255,0.08);
+  }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    line-height: 1;
+    letter-spacing: 0.05em;
+  }
+  .stat-num.blue { color: var(--blue); }
+  .stat-num.orange { color: var(--orange); }
+  .stat-num.lime { color: var(--lime); }
+  .stat-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(240,237,232,0.4);
+    margin-top: 4px;
+  }
+  .stat-divider {
+    width: 40px; height: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+
+  /* MARQUEE */
+  .marquee-wrap {
+    overflow: hidden;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 18px 0;
+    background: rgba(255,255,255,0.02);
+  }
+  .marquee-track {
+    display: flex; gap: 60px;
+    animation: marquee 20s linear infinite;
+    width: max-content;
+  }
+  .marquee-item {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.2em;
+    color: rgba(240,237,232,0.25);
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 60px;
+  }
+  .marquee-item .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: inline-block;
+  }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* SERVICES */
+  #services {
+    padding: 120px 60px;
+  }
+  .section-header {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 64px;
+  }
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 5vw, 5rem);
+    line-height: 1;
+    letter-spacing: 0.03em;
+  }
+  .section-desc {
+    max-width: 320px;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: rgba(240,237,232,0.45);
+    font-weight: 300;
+    text-align: right;
+  }
+  .services-grid {
+    max-width: 1200px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+  .service-card {
+    background: rgba(255,255,255,0.03);
+    padding: 48px 40px;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+  .service-card::before {
+    content: '';
+    position: absolute; bottom: 0; left: 0;
+    width: 100%; height: 2px;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s;
+  }
+  .service-card:nth-child(1)::before { background: var(--blue); }
+  .service-card:nth-child(2)::before { background: var(--lime); }
+  .service-card:nth-child(3)::before { background: var(--orange); }
+  .service-card:hover { background: rgba(255,255,255,0.06); transform: translateY(-4px); }
+  .service-card:hover::before { transform: scaleX(1); }
+  .service-icon {
+    font-size: 2.2rem;
+    margin-bottom: 28px;
+    display: block;
+  }
+  .service-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    color: rgba(240,237,232,0.2);
+    margin-bottom: 16px;
+  }
+  .service-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.9rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+  }
+  .service-card:nth-child(1) .service-name { color: var(--blue); }
+  .service-card:nth-child(2) .service-name { color: var(--lime); }
+  .service-card:nth-child(3) .service-name { color: var(--orange); }
+  .service-text {
+    font-size: 0.88rem;
+    line-height: 1.75;
+    color: rgba(240,237,232,0.45);
+    font-weight: 300;
+  }
+
+  /* ABOUT / MISSION */
+  #about {
+    padding: 120px 60px;
+    background: rgba(255,255,255,0.015);
+  }
+  .about-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1.2fr;
+    gap: 100px; align-items: center;
+  }
+  .about-visual {
+    position: relative;
+    aspect-ratio: 3/4;
+    max-width: 420px;
+  }
+  .about-img-frame {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(0,163,255,0.15), rgba(200,255,0,0.05));
+    border: 1px solid rgba(0,163,255,0.2);
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px));
+  }
+  .about-img-bg {
+    width: 100%; height: 100%;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(0,163,255,0.2) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 80%, rgba(255,107,26,0.15) 0%, transparent 60%),
+      linear-gradient(180deg, #0a0f1a 0%, #080808 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .about-big-letter {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18rem;
+    color: rgba(0,163,255,0.08);
+    line-height: 1;
+    user-select: none;
+  }
+  .about-badge {
+    position: absolute; bottom: -20px; right: -20px;
+    background: var(--orange);
+    color: var(--black);
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-align: center;
+    line-height: 1.3;
+    border: 4px solid var(--black);
+  }
+  .about-badge .badge-num { font-size: 1.6rem; }
+  .about-quote {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    margin-bottom: 32px;
+  }
+  .about-quote em {
+    font-style: normal;
+    -webkit-text-stroke: 1px rgba(200,255,0,0.5);
+    color: transparent;
+  }
+  .about-body {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: rgba(240,237,232,0.5);
+    font-weight: 300;
+    margin-bottom: 48px;
+  }
+  .about-features { display: flex; flex-direction: column; gap: 16px; }
+  .feat {
+    display: flex; align-items: center; gap: 16px;
+    font-size: 0.85rem; letter-spacing: 0.05em;
+    color: rgba(240,237,232,0.7);
+  }
+  .feat-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .feat-dot.blue { background: var(--blue); }
+  .feat-dot.lime { background: var(--lime); }
+  .feat-dot.orange { background: var(--orange); }
+
+  /* TESTIMONIALS */
+  #testimonials {
+    padding: 120px 60px;
+  }
+  .testimonials-grid {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    margin-top: 64px;
+  }
+  .testi-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 40px 36px;
+    position: relative;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .testi-card:hover { transform: translateY(-6px); }
+  .testi-card:nth-child(1):hover { border-color: rgba(0,163,255,0.3); }
+  .testi-card:nth-child(2):hover { border-color: rgba(200,255,0,0.3); }
+  .testi-card:nth-child(3):hover { border-color: rgba(255,107,26,0.3); }
+  .testi-quote-mark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 5rem;
+    line-height: 0.7;
+    margin-bottom: 20px;
+    display: block;
+  }
+  .testi-card:nth-child(1) .testi-quote-mark { color: var(--blue); opacity: 0.4; }
+  .testi-card:nth-child(2) .testi-quote-mark { color: var(--lime); opacity: 0.4; }
+  .testi-card:nth-child(3) .testi-quote-mark { color: var(--orange); opacity: 0.4; }
+  .testi-text {
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: rgba(240,237,232,0.65);
+    font-style: italic;
+    font-weight: 300;
+    margin-bottom: 32px;
+  }
+  .testi-author { display: flex; align-items: center; gap: 14px; }
+  .testi-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
+    color: var(--black);
+    flex-shrink: 0;
+  }
+  .testi-card:nth-child(1) .testi-avatar { background: var(--blue); }
+  .testi-card:nth-child(2) .testi-avatar { background: var(--lime); }
+  .testi-card:nth-child(3) .testi-avatar { background: var(--orange); }
+  .testi-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .testi-role {
+    font-size: 0.72rem;
+    color: rgba(240,237,232,0.35);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* CTA */
+  #cta {
+    padding: 140px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  #cta::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 50%, rgba(0,163,255,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 50%, rgba(255,107,26,0.07) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cta-inner { max-width: 700px; margin: 0 auto; position: relative; }
+  .cta-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 8vw, 8rem);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    margin-bottom: 24px;
+  }
+  .cta-title .highlight { color: var(--lime); }
+  .cta-sub {
+    font-size: 1rem; line-height: 1.7;
+    color: rgba(240,237,232,0.45);
+    font-weight: 300;
+    margin-bottom: 48px;
+  }
+  .cta-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .btn-cta-main {
+    background: var(--blue);
+    color: var(--black);
+    border: none;
+    padding: 20px 56px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  }
+  .btn-cta-main:hover { background: var(--lime); transform: scale(1.02); }
+  .btn-cta-outline {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid rgba(240,237,232,0.2);
+    padding: 20px 56px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+  }
+  .btn-cta-outline:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* FOOTER */
+  footer {
+    padding: 48px 60px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.15em;
+  }
+  .footer-logo span { color: var(--blue); }
+  .footer-copy {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: rgba(240,237,232,0.25);
+    text-transform: uppercase;
+  }
+  .footer-links { display: flex; gap: 28px; }
+  .footer-links a {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(240,237,232,0.3);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .footer-links a:hover { color: var(--lime); }
+
+  /* SCROLL ANIMATIONS */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    body { cursor: auto; }
+    .cursor, .cursor-ring { display: none; }
+    nav { padding: 20px 24px; }
+    .nav-links { display: none; }
+    #hero { padding: 0 24px; padding-top: 90px; min-height: 100vh; }
+    .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+    .hero-stats {
+      flex-direction: row; flex-wrap: wrap; gap: 24px;
+      border-left: none; border-top: 1px solid rgba(255,255,255,0.08);
+      padding-left: 0; padding-top: 32px;
+    }
+    .stat-item { flex: 1; min-width: 100px; }
+    .stat-num { font-size: 2.5rem; }
+    .stat-divider { display: none; }
+    #services { padding: 80px 24px; }
+    .section-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .section-desc { text-align: left; max-width: 100%; }
+    .services-grid { grid-template-columns: 1fr; gap: 2px; }
+    #about { padding: 80px 24px; }
+    .about-inner { grid-template-columns: 1fr; gap: 48px; }
+    .about-visual { max-width: 100%; aspect-ratio: 4/3; }
+    .about-big-letter { font-size: 10rem; }
+    #testimonials { padding: 80px 24px; }
+    .testimonials-grid { grid-template-columns: 1fr; gap: 16px; }
+    #cta { padding: 80px 24px; }
+    footer { flex-direction: column; gap: 20px; text-align: center; padding: 40px 24px; }
+    .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<canvas id="bubble-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">CO<span>R</span>E</a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#testimonials">Results</a></li>
+  </ul>
+  <button class="nav-cta">Book a Session</button>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-inner">
+    <div class="hero-left fade-up">
+      <div class="hero-tag">Elite Athletic Recovery</div>
+      <h1 class="hero-headline">
+        <div class="line-outline">PUSH</div>
+        <div class="line-blue">BEYOND</div>
+        <div class="line-orange">LIMITS</div>
+      </h1>
+      <p class="hero-sub">Physical therapy engineered for athletes who refuse to slow down. Science-backed recovery meets performance-first training.</p>
+      <div class="hero-actions">
+        <button class="btn-primary">Start Recovery</button>
+        <button class="btn-ghost"><span class="arrow">→</span> See our methods</button>
+      </div>
+    </div>
+    <div class="hero-stats fade-up">
+      <div class="stat-item">
+        <div class="stat-num blue">94%</div>
+        <div class="stat-label">Return to Sport Rate</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-num lime">3.2x</div>
+        <div class="stat-label">Faster Recovery</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-num orange">1,200+</div>
+        <div class="stat-label">Athletes Treated</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item">Performance Recovery <span class="dot"></span> Injury Rehabilitation <span class="dot"></span> Strength & Conditioning <span class="dot"></span> Manual Therapy <span class="dot"></span> Sports Medicine <span class="dot"></span> Movement Analysis <span class="dot"></span> Peak Performance <span class="dot"></span> Pain Management <span class="dot"></span></div>
+    <div class="marquee-item">Performance Recovery <span class="dot"></span> Injury Rehabilitation <span class="dot"></span> Strength & Conditioning <span class="dot"></span> Manual Therapy <span class="dot"></span> Sports Medicine <span class="dot"></span> Movement Analysis <span class="dot"></span> Peak Performance <span class="dot"></span> Pain Management <span class="dot"></span></div>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-header">
+    <div>
+      <div class="section-label">What We Do</div>
+      <h2 class="section-title">OUR<br>SERVICES</h2>
+    </div>
+    <p class="section-desc">Each program is built around your sport, your body, and your goals — not a generic protocol.</p>
+  </div>
+  <div class="services-grid">
+    <div class="service-card fade-up">
+      <span class="service-icon">⚡</span>
+      <div class="service-num">01</div>
+      <div class="service-name">Performance Rehab</div>
+      <p class="service-text">Aggressive, sport-specific rehabilitation that gets you back on the field faster — without cutting corners on healing. Every session built around your athletic demands.</p>
+    </div>
+    <div class="service-card fade-up">
+      <span class="service-icon">🔬</span>
+      <div class="service-num">02</div>
+      <div class="service-name">Movement Analysis</div>
+      <p class="service-text">3D biomechanical assessment to identify inefficiencies in your movement patterns before they become injuries. Train smarter, not just harder.</p>
+    </div>
+    <div class="service-card fade-up">
+      <span class="service-icon">💪</span>
+      <div class="service-num">03</div>
+      <div class="service-name">Strength Reconditioning</div>
+      <p class="service-text">Post-injury strength rebuilding with periodized loading protocols designed to restore — and surpass — your pre-injury performance ceiling.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-inner">
+    <div class="about-visual fade-up">
+      <div class="about-img-frame">
+        <div class="about-img-bg">
+          <span class="about-big-letter">C</span>
+        </div>
+      </div>
+      <div class="about-badge">
+        <span class="badge-num">10+</span>
+        Years of Elite Sport PT
+      </div>
+    </div>
+    <div class="about-content fade-up">
+      <div class="section-label">Our Mission</div>
+      <h2 class="about-quote">
+        THE BODY IS<br>
+        NOT THE<br>
+        <em>OBSTACLE.</em>
+      </h2>
+      <p class="about-body">Core was built on a simple belief: athletes deserve physical therapy that speaks their language. Not rest when you could be working. Not generic protocols when your sport demands specificity. We work with your body's capacity to adapt — pushing it exactly as hard as it should be pushed.</p>
+      <div class="about-features">
+        <div class="feat"><div class="feat-dot blue"></div> Board-certified sports physical therapists</div>
+        <div class="feat"><div class="feat-dot lime"></div> Evidence-based, athlete-specific protocols</div>
+        <div class="feat"><div class="feat-dot orange"></div> Same-day injury consultations available</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div class="section-header" style="max-width:1200px;margin:0 auto;">
+    <div>
+      <div class="section-label">Athlete Results</div>
+      <h2 class="section-title">WHAT THEY<br>SAY</h2>
+    </div>
+    <p class="section-desc">Real athletes. Real recoveries. No fluff.</p>
+  </div>
+  <div class="testimonials-grid">
+    <div class="testi-card fade-up">
+      <span class="testi-quote-mark">"</span>
+      <p class="testi-text">Tore my ACL in February. Core had me back training in five months — two months ahead of my surgeon's timeline. The approach is aggressive in the best way.</p>
+      <div class="testi-author">
+        <div class="testi-avatar">MR</div>
+        <div>
+          <div class="testi-name">Marcus R.</div>
+          <div class="testi-role">Division I Soccer · Forward</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card fade-up">
+      <span class="testi-quote-mark">"</span>
+      <p class="testi-text">I've been to four PTs over the years. Core is the only one that actually understood what I needed as a competitive powerlifter. My squat is now better than pre-injury.</p>
+      <div class="testi-author">
+        <div class="testi-avatar">JL</div>
+        <div>
+          <div class="testi-name">Jamie L.</div>
+          <div class="testi-role">Competitive Powerlifter</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card fade-up">
+      <span class="testi-quote-mark">"</span>
+      <p class="testi-text">Chronic shoulder impingement that three doctors told me to just rest. Core found the root cause in week one and fixed it in six. I'm throwing harder at 34 than I was at 28.</p>
+      <div class="testi-author">
+        <div class="testi-avatar">TK</div>
+        <div>
+          <div class="testi-name">Tyler K.</div>
+          <div class="testi-role">Amateur Baseball · Pitcher</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-inner">
+    <div class="section-label" style="color:var(--blue);text-align:center;margin-bottom:24px;">Ready to Return Stronger</div>
+    <h2 class="cta-title">DON'T SIT<br>ON THE <span class="highlight">BENCH.</span></h2>
+    <p class="cta-sub">Book your initial assessment and get a personalized recovery roadmap built around your sport, your timeline, and your goals.</p>
+    <div class="cta-buttons">
+      <button class="btn-cta-main">Book Free Assessment</button>
+      <button class="btn-cta-outline">Learn More</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">CO<span>R</span>E</div>
+  <div class="footer-copy">© 2025 Core Physical Therapy. All rights reserved.</div>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Instagram</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
+
+<script>
+// ── CUSTOM CURSOR ──────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animCursor() {
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+document.querySelectorAll('button, a').forEach(el => {
+  el.addEventListener('mouseenter', () => { ring.style.width='60px'; ring.style.height='60px'; cursor.style.transform='translate(-50%,-50%) scale(2)'; });
+  el.addEventListener('mouseleave', () => { ring.style.width='36px'; ring.style.height='36px'; cursor.style.transform='translate(-50%,-50%) scale(1)'; });
+});
+
+// ── BUBBLE CANVAS ──────────────────────────────────────────
+const canvas = document.getElementById('bubble-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, bubbles = [];
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const COLORS = [
+  { r:0, g:163, b:255 },
+  { r:200, g:255, b:0 },
+  { r:255, g:107, b:26 },
+];
+
+class Bubble {
+  constructor() { this.reset(true); }
+  reset(init = false) {
+    this.x = Math.random() * W;
+    this.y = init ? Math.random() * H : H + 120;
+    this.r = 20 + Math.random() * 100;
+    this.baseR = this.r;
+    this.speedY = 0.15 + Math.random() * 0.4;
+    this.speedX = (Math.random() - 0.5) * 0.3;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = 0.008 + Math.random() * 0.012;
+    this.wobbleAmp = 0.5 + Math.random() * 1.5;
+    this.col = COLORS[Math.floor(Math.random() * COLORS.length)];
+    this.opacity = 0.04 + Math.random() * 0.1;
+    this.pulsePhase = Math.random() * Math.PI * 2;
+    this.pulseSpeed = 0.005 + Math.random() * 0.008;
+  }
+  update() {
+    this.y -= this.speedY;
+    this.x += this.speedX + Math.sin(this.wobble) * this.wobbleAmp * 0.15;
+    this.wobble += this.wobbleSpeed;
+    this.pulsePhase += this.pulseSpeed;
+    this.r = this.baseR + Math.sin(this.pulsePhase) * (this.baseR * 0.04);
+    if (this.y + this.r < 0) this.reset();
+  }
+  draw() {
+    const { r, g, b } = this.col;
+    const grad = ctx.createRadialGradient(
+      this.x - this.r * 0.25, this.y - this.r * 0.25, this.r * 0.05,
+      this.x, this.y, this.r
+    );
+    grad.addColorStop(0, `rgba(${r},${g},${b},${this.opacity * 1.8})`);
+    grad.addColorStop(0.5, `rgba(${r},${g},${b},${this.opacity * 0.6})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.opacity * 0.5})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(this.x - this.r * 0.3, this.y - this.r * 0.3, this.r * 0.18, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${this.opacity * 0.6})`;
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 60; i++) bubbles.push(new Bubble());
+
+let mouseX = W / 2, mouseY = H / 2;
+document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  bubbles.forEach(b => {
+    const dx = b.x - mouseX, dy = b.y - mouseY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < 180) {
+      const force = (180 - dist) / 180 * 0.6;
+      b.x += (dx / dist) * force;
+      b.y += (dy / dist) * force;
+    }
+    b.update();
+    b.draw();
+  });
+  requestAnimationFrame(loop);
+}
+loop();
+
+// ── SCROLL FADE ────────────────────────────────────────────
+const fadeEls = document.querySelectorAll('.fade-up');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+fadeEls.forEach(el => obs.observe(el));
+document.querySelectorAll('#hero .fade-up').forEach(el => {
+  setTimeout(() => el.classList.add('visible'), 200);
+});
+</script>
+</body>
+</html>
